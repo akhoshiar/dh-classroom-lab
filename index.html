@@ -1,0 +1,947 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Interactive robotics teaching activity: build an R–R–P robot, assign Denavit–Hartenberg frames, check your answers, and complete the Modified D–H table.">
+<title>D–H Classroom Lab — Interactive Robotics Exercise</title>
+<style>
+:root{--ink:#142542;--muted:#6b7e98;--blue:#245fe0;--red:#ed343c;--green:#20ae5f;--gold:#dba323;--rose:#914858;--line:#dfe7f1;--paper:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:#f5f7fb;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;color:var(--ink)}
+.shell{max-width:1370px;margin:0 auto;padding:20px 18px 32px}
+header{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;margin-bottom:15px}
+h1{font-size:22px;letter-spacing:-.04em;line-height:1.3;margin:0 0 5px}
+.subtitle{font-size:12px;color:var(--muted);margin:0}
+.pill{font-size:11px;color:#3f6198;background:#e7effc;border-radius:100px;padding:8px 12px;font-weight:750}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 293px;gap:13px;align-items:start}
+.left{min-width:0;display:grid;gap:12px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 1px 2px #0b1a3210}
+.toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:11px 13px;border-bottom:1px solid #e8edf4}
+.toolbar strong{font-size:13px;margin-right:auto}
+button{font:inherit;cursor:pointer}
+.viewbtn,.softbtn{border-radius:6px;padding:8px 11px;border:1px solid #d8e3f1;color:#476080;background:#f8faff;font-size:11px;font-weight:750}
+.viewbtn.active{background:#e7f0ff;border-color:#98b7ec;color:#174fa4}
+.viewbtn:hover,.softbtn:hover{background:#e8f0fc}
+.stage{height:500px;position:relative;background:radial-gradient(ellipse at 45% 30%,#fff 45%,#fbfcff 100%)}
+#scene{height:100%;width:100%;display:block;touch-action:none;cursor:grab}
+#scene.dragging{cursor:grabbing}
+.stage-hint{position:absolute;top:10px;left:13px;font-size:10px;color:#8795a7;pointer-events:none}
+.legend{position:absolute;bottom:10px;left:12px;background:#ffffffed;border:1px solid #e3eaf4;border-radius:7px;display:flex;gap:11px;padding:8px 10px;font-size:10px;color:#667b92;pointer-events:none}
+.dot{display:inline-block;width:13px;height:3px;border-radius:3px;vertical-align:middle;margin-right:4px}
+.under{border-top:1px solid #e6edf5;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;padding:10px 14px;color:#6d8199;font-size:11px}
+.under strong{color:#3a557b}
+.tbl-head{padding:11px 13px 4px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.tbl-head strong{font-size:13px}
+.tbl-head span{font-size:10px;color:#8192a7}
+.table-scroll{overflow-x:auto;padding:3px 13px 13px}
+table{width:100%;border-collapse:collapse;font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}
+th{background:#eaf1fc;color:#395579;font-size:11px;text-align:left}
+th,td{padding:9px 11px;border:1px solid #d6e2f2}
+tr:nth-child(even) td{background:#fafcff}
+tr[data-link],tr[data-frame]{cursor:pointer}
+tr[data-link]:hover td,tr[data-frame]:hover td{background:#eef5ff}
+.dimname{font-family:Georgia,serif;font-size:15px;font-style:italic;font-weight:750}
+.side{padding:15px}
+.side h2{font-size:14px;margin:0 0 7px}
+.help{font-size:11px;color:#7c8da4;line-height:1.55;margin:0 0 12px}
+.adds{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.adds button{background:#eaf2ff;border:1px solid #cadcf6;color:#225aaf;font-size:11px;font-weight:750;border-radius:6px;padding:10px 3px}
+.adds button:hover{background:#dbeaff}
+.section{border-top:1px solid #e5edf6;padding-top:14px;margin-top:15px}
+.section h3{font-size:11px;letter-spacing:.04em;margin:0 0 10px;color:#40536d}
+.editor{min-height:147px}
+.empty{font-size:11px;line-height:1.55;background:#f6f9fd;border-radius:8px;padding:13px;color:#788ba4;min-height:130px}
+.field{display:grid;gap:6px;margin:9px 0}
+.field label{font-size:10px;font-weight:700;color:#617892}
+.field select,.field input[type=text]{padding:8px;border:1px solid #dce5f0;border-radius:6px;background:white;color:#253d59;font-size:11px;width:100%}
+.field input[type=range]{width:100%;accent-color:#2569da;margin:2px 0}
+.editor .value{font-weight:800;color:#1e5caf}
+.delete{padding:8px 9px;border:1px solid #eed1d3;border-radius:6px;color:#ab4354;background:#fff7f7;font-size:11px}
+.check{font-size:11px;display:flex;align-items:center;justify-content:space-between;margin:11px 0;color:#556b85}
+.check input{width:15px;height:15px;accent-color:#2a66d4}
+.actions{display:flex;gap:7px;flex-wrap:wrap}
+.actions button{flex:1;min-width:98px}
+.primary{background:#2564c2;color:white;border:1px solid #2564c2;border-radius:6px;padding:10px 12px;font-size:11px;font-weight:800}
+.primary:hover{background:#1d55ad}
+.pos{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.pos>div{padding:11px 14px;border:1px solid var(--line);background:#fff;border-radius:9px}
+.pos small{display:block;font-size:10px;font-weight:800;color:#8295af;letter-spacing:.07em;margin-bottom:5px}
+.pos strong{font-size:16px;color:#365d8d;font-variant-numeric:tabular-nums}
+.orientation-controls{display:flex;align-items:center;gap:4px;margin-left:3px}.orientation-controls button{min-width:30px}.orientation-controls[hidden]{display:none}.axis-key{font-size:10px;color:#7b8ea5;padding:8px 12px;border-top:1px solid #ebf0f7}.axis-key strong{font-weight:800}.rule-card{margin-top:0}.rule-card summary{cursor:pointer;padding:12px 14px;font-weight:800;font-size:12px;color:#385578}.rules{padding:0 14px 12px;font-size:11px;color:#566b85;line-height:1.6}.rules p{margin:5px 0 9px}.status-strip{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;border:1px solid #dae6f3;background:#f7fbff;border-radius:8px;padding:10px 13px;font-size:11px;color:#45637e}.status-strip strong{color:#24599f}.note{color:#8291a6;font-size:11px;line-height:1.55;margin:2px}
+.data-tables{display:grid;grid-template-columns:minmax(0,.94fr) minmax(0,1.06fr);gap:12px;align-items:start}.data-tables .card{min-width:0}.data-tables .table-scroll{padding:3px 10px 12px}.data-tables table{font-size:10px}.data-tables th,.data-tables td{padding:7px 7px}.dh-toolbar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;padding:0 13px 9px}.dh-toolbar label{font-size:10px;color:#637b96;font-weight:750}.dh-toolbar select{background:#fff;border:1px solid #cadaed;border-radius:5px;padding:6px;color:#314f76;font-size:10px;max-width:100%}.single-convention{padding:7px 13px 9px;color:#577599;font-size:10px;line-height:1.4}.dh-variable{font-weight:800;color:#1e58ad;font-family:Georgia,serif;font-style:italic;font-size:13px}.dh-constant{font-weight:750;color:#496281}.dh-dyn{color:#204f9b;font-weight:750;font-variant-numeric:tabular-nums}.dh-table-note{font-size:10px;color:#6f8096;line-height:1.5;padding:0 13px 11px;margin:0}.dh-table-note strong{color:#3b5d8b}.dh-alert{background:#fff9e8;color:#7d631b;border-top:1px solid #f1e0b0;padding:9px 13px;font-size:10px;line-height:1.5}.dh-alert[hidden]{display:none}.table-label{min-width:0;overflow-wrap:anywhere}.dh-subhead{font-size:10px;color:#8192a7}.dh-live-col{text-align:right}.dimname{white-space:nowrap}@media(max-width:1120px){.data-tables{grid-template-columns:1fr}.data-tables table{font-size:11px}}
+@media(max-width:820px){.layout{grid-template-columns:1fr}.stage{height:405px}.shell{padding:12px 9px 24px}.editor{min-height:0}}
+@media(max-width:450px){h1{font-size:19px}.stage{height:335px}.viewbtn{padding:7px 9px}.legend{gap:6px;font-size:9px}.pos strong{font-size:13px}}
+
+.lesson{padding:17px 17px 14px}.steps{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:13px}.step-button{border:1px solid #c9daef;border-radius:8px;background:#f3f7fd;color:#3d5d87;padding:11px 14px;font-size:12px;font-weight:800;min-height:43px}.step-button.active{background:#245fbe;color:#fff;border-color:#245fbe}.lesson-title{font-size:15px;margin:0 0 4px;letter-spacing:-.02em}.lesson-description{font-size:12px;color:#617590;line-height:1.5;margin:0 0 12px}.lesson-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(245px,.85fr);gap:13px}.lesson-box{background:#f8fbff;border:1px solid #dce7f5;border-radius:9px;padding:12px}.joint-choices{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 12px}.joint-chip{border:1px solid #d0ddeb;background:white;color:#435c7a;border-radius:7px;padding:8px 12px;font-size:11px;font-weight:750;min-height:38px}.joint-chip.active{background:#e2efff;color:#164a94;border-color:#6c9edc}.axis-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.axis-entry{display:grid;gap:6px;font-size:12px;font-weight:800}.axis-entry select{font-size:13px;padding:10px;border-radius:7px;background:#fff;border:1px solid #cbd9e8;min-width:0;width:100%;min-height:44px}.axis-red{color:#db2732}.axis-green{color:#10934d}.axis-preview{text-align:center;margin-top:9px;font-size:11px;color:#607796}.custom{display:grid;gap:8px;margin-top:8px}.custom[hidden]{display:none}.custom label{display:grid;gap:4px;color:#5b7291;font-size:11px}.custom input{width:100%;accent-color:#285ec0}.lesson-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}.lesson-actions button{min-height:42px;padding:10px 13px;font-size:12px}.assess{margin:0;font-size:11px;color:#516983;line-height:1.65}.assess h4{font-size:12px;margin:0 0 6px;color:#314e72}.feedback-item{padding:8px 9px;border-bottom:1px solid #e1e8f2;line-height:1.5;font-size:11px}.feedback-item:last-child{border:0}.feedback-item.correct{color:#227241}.feedback-item.incorrect{color:#a14b35}.feedback-item.neutral{color:#47627e}.feedback-summary{font-size:12px;font-weight:850;color:#244e84;margin-bottom:6px}.rules-fine{margin-top:9px;color:#687d97;font-size:11px;line-height:1.5}.answer-input{width:100%;min-width:76px;border:1px solid #cbd9ea;background:white;border-radius:5px;padding:9px 7px;font-size:12px;font-family:system-ui;min-height:40px;color:#1c3555}.answer-input.good{border-color:#4fbb7b;background:#f0fbf3}.answer-input.bad{border-color:#e29a89;background:#fff4f0}.answer-input:focus{outline:2px solid #83aaf0;outline-offset:1px}.answer-head{display:flex;justify-content:space-between;flex-wrap:wrap;gap:7px;padding:10px 12px 2px}.answer-note{font-size:10px;color:#7289a3;line-height:1.5;padding:4px 13px 12px}.solution-panel{margin:0 12px 12px;background:#f1f7ff;border:1px solid #d4e4f7;border-radius:8px;padding:9px;overflow-x:auto}.solution-panel[hidden]{display:none}.solution-panel th,.solution-panel td{padding:7px;font-size:11px}.geometry-warning{padding:8px 11px;background:#fff5e9;color:#85542c;border-radius:6px;font-size:11px;line-height:1.5;margin:8px 0}.hidden-until-feedback[hidden]{display:none}.teaching-footer{font-size:11px;color:#71839a;margin-top:8px}.lesson-score{font-size:10px;color:#597290;border-radius:6px;background:#eff5fe;padding:6px 8px}.outline-badge{border:1px solid #c9daec;border-radius:5px;padding:3px 6px;font-size:10px;color:#607b96}.safety-note{font-size:10px;color:#697f99}.table-scroll .ans{min-width:83px}.data-tables #mdh-card{min-width:0}.data-tables #mdh-card .table-scroll{overflow-x:auto}.row-error-message{color:#a14b35}.row-correct-message{color:#217743}.secondary{border:1px solid #c8d9f0;color:#2e5f9e;background:#fff;padding:10px 13px;border-radius:6px;font-weight:700}.secondary:disabled{cursor:not-allowed;opacity:.5}.mdh-stage-surface{border-top:1px solid #edf1f7}.exercise-chip{border-radius:20px;padding:4px 8px;font-size:10px;background:#eaf3ff;color:#375c90}
+@media(max-width:860px){.lesson-wrap{grid-template-columns:1fr}.lesson{padding:12px}.step-button{flex:1}.joint-chip{min-width:49px}.lesson-box{padding:11px}.axis-pair{grid-template-columns:1fr 1fr}.answer-input{min-width:69px;font-size:11px;padding:8px 5px}}
+@media(max-width:440px){.axis-entry select{font-size:12px}.lesson-actions button{flex:1}.lesson-title{font-size:14px}.steps{gap:5px}.step-button{padding:9px 8px;font-size:11px}}
+
+.reference-controls .actions button{min-width:0;padding:10px 8px}.reference-controls .actions button[aria-pressed="true"]{background:#e1eeff;border-color:#7ca9e8;color:#164b91}
+.origin-slider{margin-top:11px;padding:11px;border:1px solid #d6e3f3;background:#f6f9fe;border-radius:8px}.origin-slider label{display:grid;gap:3px;font-size:11px;font-weight:760;color:#31517b}.origin-slider output{color:#245ca5}.origin-slider input{width:100%;margin:10px 0 4px;accent-color:#2468bf;min-height:22px}.origin-slider p{font-size:10px;line-height:1.5;color:#59728d;margin:3px 0 0}.small-proof{font-size:11px;line-height:1.6;margin-top:10px;color:#46658a}.small-proof b{color:#244c86}
+.success-math{color:#187447;font-weight:780}.lesson-warning{padding:9px 12px;background:#fff8ea;border:1px solid #f1ddae;border-radius:7px;font-size:11px;color:#765b18;line-height:1.5;margin:10px 0}
+@media (max-width:450px){.lesson-wrap{grid-template-columns:1fr}.reference-controls .actions button{font-size:11px}}
+/* Touch-friendly six-joint reduction controls. */
+.reduce-tip{font-size:11px;line-height:1.55;color:#3f5f85;background:#eff6ff;border-radius:7px;padding:9px;margin-top:10px}
+#delete-joint-link{min-height:42px;touch-action:manipulation}
+@media(max-width:680px){.reduce-tip{font-size:12px}.reference-controls .actions{flex-wrap:wrap}.reference-controls .actions button{flex:1 1 130px}}
+
+/* Classroom reference at the very bottom, available without opening a separate panel. */
+.guidance{margin-top:16px;overflow:hidden}.guidance-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;padding:20px 22px 13px;border-bottom:1px solid #e3ebf5}
+.guide-eyebrow{font-size:10px;color:#3974c4;font-weight:850;letter-spacing:.12em}.guidance-head h2{font-size:20px;color:#213c63;line-height:1.3;margin:5px 0 8px}.guidance-head p{color:#687c97;font-size:12px;max-width:850px;line-height:1.5;margin:0}.guide-convention{white-space:nowrap;background:#eaf3ff;color:#315e99;border-radius:24px;font-size:10px;font-weight:750;padding:8px 11px}
+.guide-content{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:18px 22px 20px}.guide-content h3{font-size:14px;color:#304e75;margin:0 0 12px}.guide-table-scroll{width:100%;overflow-x:auto}.guide-param-table{font-size:12px;white-space:normal;min-width:380px}.guide-param-table th{background:#eaf2ff;text-align:left;color:#3d5d82}.guide-param-table td,.guide-param-table th{border:1px solid #d7e4f2;vertical-align:top;padding:10px 9px;line-height:1.5}.guide-param-table tr:nth-child(even){background:#f8fbff}.guide-math{font-family:Georgia,serif;font-style:italic;font-size:19px;color:#244f89;white-space:nowrap}.guide-math sub{font-size:12px}
+.guide-formulas{display:grid;gap:8px;margin-top:12px}.guide-formulas>div{background:#f2f7ff;border:1px solid #d9e7f8;border-radius:8px;padding:10px 12px}.guide-formulas b{display:block;color:#375f93;font-size:11px;margin-bottom:4px}.guide-formulas code{font-size:12px;color:#244a78;white-space:normal;overflow-wrap:anywhere}.guide-note{background:#f7faff;border-left:3px solid #3e83d4;color:#536f92;padding:11px 12px;font-size:11px;line-height:1.6;border-radius:0 7px 7px 0}.guide-rules ol{margin:0;padding-left:21px;display:grid;gap:7px}.guide-rules li{font-size:11px;color:#4f6784;line-height:1.52;padding-left:3px}.guide-rules li::marker{color:#316db7;font-weight:800}.guidance-bottom{background:#f5f9ff;border-top:1px solid #e0eaf6;color:#56718f;padding:12px 22px;font-size:12px;line-height:1.5}
+@media(max-width:1000px){.guide-content{grid-template-columns:1fr}.guide-rules ol{grid-template-columns:repeat(2,1fr);column-gap:28px}}@media(max-width:650px){.guidance-head{padding:17px 13px;flex-direction:column;gap:9px}.guidance-head h2{font-size:17px}.guide-content{padding:14px 12px;gap:16px}.guide-rules ol{grid-template-columns:1fr}.guide-param-table{font-size:11px}.guide-param-table td,.guide-param-table th{padding:8px 6px}.guidance-bottom{padding:12px}.guide-convention{align-self:flex-start}}
+</style>
+</head>
+<body>
+<main class="shell" id="app">
+<header><div><h1>D–H Classroom Lab — V13</h1><p class="subtitle">Start with the R–R–P example → assign frames → complete the Modified D–H table</p></div><span class="pill" id="chain-tag">R · R · P</span></header>
+<div class="layout">
+<div class="left">
+<section class="card">
+<div class="toolbar"><strong>Robot schematic</strong><button class="viewbtn active" data-view="iso">3D</button><button class="viewbtn" data-view="top">Top</button><button class="viewbtn" data-view="side">Side</button><div class="orientation-controls" id="orbit-controls" title="Adjust 3D view direction"><button class="viewbtn" data-orbit="left" title="Rotate left">←</button><button class="viewbtn" data-orbit="right" title="Rotate right">→</button><button class="viewbtn" data-orbit="up" title="View from above">↑</button><button class="viewbtn" data-orbit="down" title="View from below">↓</button></div><button class="viewbtn" id="zoom-out">−</button><button class="viewbtn" id="zoom-in">+</button></div>
+<div class="stage"><svg id="scene" viewBox="0 0 900 550" role="img" aria-label="Interactive 3D schematic of a serial robot with a ground reference frame and gripper"></svg><div class="stage-hint">3D: drag to orbit / use arrows · Top and Side: fixed views · Click to edit</div><div class="legend"><span><i class="dot" style="background:#ed343c"></i>z (joint axis)</span><span><i class="dot" style="background:#20ae5f"></i>x (common normal)</span><span><i class="dot" style="background:#dba323"></i>Ground</span><span><i class="dot" style="background:#914858"></i>Robot</span></div></div>
+<div class="under"><span id="counts">3 joints · 4 links</span><span><strong id="sequence">R – R – P</strong></span></div>
+</section>
+
+<section class="card lesson" id="learning-card" aria-label="Interactive student activity">
+<div class="steps"><button class="step-button active" id="stage-frames">1 · Assign x/z frames</button><button class="step-button" id="stage-mdh">2 · Complete D–H table</button><span class="lesson-score" id="activity-status">Student mode · answers hidden</span></div>
+<div id="frame-exercise">
+ <h2 class="lesson-title">Stage 1 · Assign the coordinate axes</h2>
+ <p class="lesson-description">Start with the three-DOF R–R–P mechanism shown above. Select each joint. Choose <b>red z</b> along its physical rotation/translation axis, and <b>green x</b> from this axis and the next one. Your choices appear on the robot. No correct solution is shown before you check.</p>
+ <div class="lesson-wrap">
+  <div class="lesson-box"><div class="joint-choices" id="student-joints" aria-label="Choose a joint to assign"></div><div class="axis-pair">
+   <label class="axis-entry axis-red">z direction <select id="student-z" aria-label="Student z axis"></select></label>
+   <label class="axis-entry axis-green">x direction <select id="student-x" aria-label="Student x axis"></select></label>
+  </div><div id="custom-z" class="custom" hidden><label>z azimuth <span id="z-az-value"></span><input id="z-az" type="range" min="-180" max="180" value="0" step="5"/></label><label>z elevation <span id="z-el-value"></span><input id="z-el" type="range" min="-90" max="90" value="0" step="5"/></label></div>
+  <div id="custom-x" class="custom" hidden><label>x azimuth <span id="x-az-value"></span><input id="x-az" type="range" min="-180" max="180" value="0" step="5"/></label><label>x elevation <span id="x-el-value"></span><input id="x-el" type="range" min="-90" max="90" value="0" step="5"/></label></div>
+  <div class="axis-preview" id="student-preview">Select z and x to see your arrows on the robot.</div>
+  <div class="lesson-actions"><button class="primary" id="check-frames">Check my frames</button><button class="secondary" id="go-table">Next: D–H table</button></div></div>
+  <div class="lesson-box"><div id="frames-feedback" class="assess" role="status" aria-live="polite"><h4>Before you check</h4>Assign your axes for each joint. For skew lines use the shortest common normal; for intersecting axes use the normal to their plane. Parallel or coincident axes allow the stated special choices.</div>
+  <div class="lesson-actions"><button id="compare-frames" class="secondary" disabled>Compare instructor axes</button><button id="clear-axes" class="secondary">Clear my choices</button></div><p class="rules-fine">Alternative consistent axis signs can be valid, but this worksheet grades the displayed instructor positive directions so the parameter table has one unique answer key. Reversing an axis requires recomputing the signed parameters. Use a consistent frame-sign convention throughout. After adding or removing any link or joint, recompute all frames and the parameter table.</p></div>
+ </div>
+</div>
+<div id="table-exercise-top" hidden><h2 class="lesson-title">Stage 2 · Complete the Modified D–H table</h2><p class="lesson-description">Use the joint geometry and the frames you assigned. Enter aᵢ₋₁, αᵢ₋₁, dᵢ, θᵢ for every joint. Write <b>θᵢ</b> for revolute variables and <b>dᵢ</b> for prismatic variables—do not expand them as q offsets.</p><p class="rules-fine">Units: lengths in metres, angles in degrees. You may use numeric constants (for example 1.75, −90) and symbols (θ₂, d₃). The teacher solution stays hidden until you check. A prismatic joint can have a nonzero constant θᵢ even though its variable is dᵢ. In this reference configuration, θ₃ = −90°.</p><div class="lesson-actions"><button id="back-to-frames" class="secondary">← Review frame assignment</button><button id="jump-to-mdh" class="primary">Go to answer table ↓</button></div></div>
+</section>
+<div class="data-tables" aria-label="Robot dimensions and modified Denavit-Hartenberg parameter tables">
+<section class="card" id="dimensions-card">
+<div class="tbl-head"><strong>Dimensions / Link Data</strong><span>Physical link dimensions · live</span></div>
+<div class="table-scroll"><table><thead><tr><th>Link</th><th>Length</th><th>Direction</th><th>After</th></tr></thead><tbody id="dimension-rows"></tbody></table></div>
+</section>
+<section class="card" id="mdh-card">
+<div class="tbl-head"><strong>Modified D–H Table</strong><span class="dh-subhead">Student worksheet · 1 solution after checking</span></div>
+<div class="single-convention">Your values are checked against the geometric solution. For R use θᵢ; for P use dᵢ.</div>
+<div class="table-scroll"><table aria-label="Modified Denavit Hartenberg parameters"><thead><tr><th>i / Type</th><th>aᵢ₋₁</th><th>αᵢ₋₁</th><th>dᵢ</th><th>θᵢ</th><th class="dh-live-col">Result</th></tr></thead><tbody id="mdh-rows"></tbody></table></div>
+<div class="lesson-actions" style="padding:0 12px 10px"><button class="primary" id="check-mdh">Check my D–H table</button><button class="secondary" id="reveal-mdh" disabled>Show correct table</button></div><div id="mdh-feedback" class="assess" style="padding:0 12px 12px" aria-live="polite">Enter parameters in the editable cells, then select <b>Check my D–H table</b> to receive targeted feedback.</div><div class="solution-panel" id="mdh-solution" hidden></div><p class="dh-table-note" id="mdh-note"></p>
+<div class="dh-alert" id="mdh-alert" hidden></div>
+</section>
+</div>
+<section class="card" id="frame-card" hidden>
+<div class="tbl-head"><strong>D–H Frame Construction / Geometry Check</strong><span>Shared frame origins chosen where axes physically intersect</span></div>
+<div class="table-scroll"><table><thead><tr><th>Frame</th><th>Current → next</th><th>Axis relationship</th><th>Frame origin (X, Y, Z)</th><th>Origin choice</th><th>Max |x·z|</th></tr></thead><tbody id="frame-rows"></tbody></table></div>
+</section>
+
+<div class="pos"><div><small>TOOL X</small><strong id="tool-x">0.00 m</strong></div><div><small>TOOL Y</small><strong id="tool-y">0.00 m</strong></div><div><small>TOOL Z</small><strong id="tool-z">0.00 m</strong></div></div><div class="status-strip"><strong id="shared-status">O₃ = O₄ = O₅ = O₆</strong><span id="tool-status">Tool orientation = final joint orientation</span></div>
+<p class="note">Instructor rule set: zᵢ follows the physical joint axis; xᵢ is the common normal with the next axis (or a valid convenient normal for coincident axes). Origins can slide along their own z-axes to simplify consistent geometry. Only x and z are displayed; y completes a right-handed frame internally. Link lengths Lᵢ are not automatically equal to D–H parameters. The MDH worksheet is checked against the very same geometric frame assignment shown in the scene. For the default R–R–P geometry with Δ = 0, d₁ = 1.75 m and θ₃ = −90°. The optional six-joint robot uses the same geometric solver; graphical joint sizes do not add physical offsets.</p>
+</div>
+<aside class="card side">
+<h2>Build your mechanism</h2><p class="help">Select a link or joint in the schematic to edit it. New elements are inserted after your selection.</p>
+<div class="adds"><button id="add-r">+ R joint</button><button id="add-p">+ P joint</button><button id="add-link">+ Link</button></div>
+<div class="section reference-controls"><h3>REFERENCE CONFIGURATION</h3>
+<div class="actions"><button id="load-rrp" class="softbtn" aria-pressed="true">3-DOF default (R–R–P)</button><button id="load-six" class="softbtn" aria-pressed="false">Optional six-joint robot</button></div>
+<div class="origin-slider"><label for="origin-shift">Slide O₁ along its z₁-axis <output id="origin-shift-value">Δ = 0.00 m</output></label>
+<input id="origin-shift" type="range" min="-0.40" max="0.40" value="0" step="0.05" aria-label="Shift frame 1 origin along its own z axis"/>
+<p>A frame origin may move only along its own z-axis. Adjust Δ to explore valid origin choices; any dependent D–H offsets are recalculated. No graphical mounting offset is added.</p><p class="reduce-tip"><b>Default geometry:</b> four physical links, L₁ = 1.75 m (+Z), L₂ = 1.00 m (+X), L₃ = 1.15 m (+X), and L₄ = 1.00 m (−Z). You can add or remove joints and links; the frame and D–H exercises update from the edited mechanism.</p></div>
+<div id="geometry-proof" class="small-proof" aria-live="polite"></div>
+</div>
+<div class="section"><h3>SELECTED ELEMENT</h3><div class="editor empty" id="editor">Click a joint or link in the drawing to edit its geometry or move the joint.</div></div>
+<div class="section"><h3>DISPLAY OPTIONS</h3><label class="check">Joint labels (R / P)<input type="checkbox" id="labels" checked></label><label class="check">Dimensions (L₁, L₂ …)<input type="checkbox" id="dims" checked></label><label class="check">Show instructor frames after checking<input type="checkbox" id="axes" disabled></label><label class="check">Simplify shared frame origins<input type="checkbox" id="simplify" checked></label><label class="check">Show inherited tool frame after checking<input type="checkbox" id="toolframe" checked></label><label class="check">Construction guides<input type="checkbox" id="guides" checked></label><label class="check">End-effector gripper<input type="checkbox" id="gripper" checked></label></div>
+<div class="section"><h3>PLAY / RESET</h3><div class="actions"><button class="primary" id="animate">▶ Animate joints</button><button class="softbtn" id="home">Home pose</button></div><div class="actions" style="margin-top:8px"><button class="softbtn" id="reset-view">Reset view</button><button class="softbtn" id="reset-example">Restore 3-DOF default</button></div></div>
+</aside>
+</div>
+
+<section class="card guidance" id="teaching-guidance" aria-label="Denavit Hartenberg student guidance">
+ <div class="guidance-head"><div><span class="guide-eyebrow">TEACHING REFERENCE</span><h2>Modified Denavit–Hartenberg: definitions and frame-assignment rules</h2><p>Use these four definitions when completing the worksheet. The directions and signed quantities must refer to the same assigned coordinate frames as the robot drawing.</p></div><span class="guide-convention">Modified D–H · x / z only</span></div>
+ <div class="guide-content">
+  <div class="guide-definitions">
+   <h3>The four D–H parameters</h3>
+   <div class="guide-table-scroll"><table class="guide-param-table"><thead><tr><th>Parameter</th><th>What to measure</th><th>Joint variable</th></tr></thead><tbody>
+    <tr><td><b class="guide-math">θ<sub>i</sub></b></td><td><b>Angle</b> from x<sub>i−1</sub> to x<sub>i</sub>, measured <b>about z<sub>i</sub></b> using the right-hand rule.</td><td>Variable for a <b>revolute</b> joint; write θ<sub>i</sub>.</td></tr>
+    <tr><td><b class="guide-math">d<sub>i</sub></b></td><td><b>Signed distance</b> between x<sub>i−1</sub> and x<sub>i</sub>, measured <b>along z<sub>i</sub></b>.</td><td>Variable for a <b>prismatic</b> joint; write d<sub>i</sub>.</td></tr>
+    <tr><td><b class="guide-math">a<sub>i−1</sub></b></td><td><b>Signed distance</b> from z<sub>i−1</sub> to z<sub>i</sub>, measured along the mutual perpendicular x<sub>i−1</sub>.</td><td>Link-length parameter; may be zero where axes intersect.</td></tr>
+    <tr><td><b class="guide-math">α<sub>i−1</sub></b></td><td><b>Signed angle</b> from z<sub>i−1</sub> to z<sub>i</sub>, measured <b>about x<sub>i−1</sub></b> using the right-hand rule.</td><td>Link-twist parameter (constant for a fixed mechanism).</td></tr>
+   </tbody></table></div>
+   <div class="guide-formulas"><div><b>Signed θ<sub>i</sub></b><code>atan2[zᵢ · (xᵢ₋₁ × xᵢ), xᵢ₋₁ · xᵢ]</code></div><div><b>Signed α<sub>i−1</sub></b><code>atan2[xᵢ₋₁ · (zᵢ₋₁ × zᵢ), zᵢ₋₁ · zᵢ]</code></div></div>
+   <p class="guide-note"><strong>Important:</strong> A prismatic joint has variable d<sub>i</sub>, but its constant θ<sub>i</sub> may be nonzero (−90° in this example). A revolute joint has variable θ<sub>i</sub>, while d<sub>i</sub> can remain a nonzero constant.</p>
+  </div>
+  <div class="guide-rules">
+   <h3>Frame-assignment and simplification checklist</h3>
+   <ol>
+    <li><b>Choose z<sub>i</sub> from joint motion:</b> z<sub>i</sub> must lie along the actual rotation or translation axis of joint i.</li>
+    <li><b>Choose x<sub>i</sub> from the next joint:</b> it is perpendicular to both z<sub>i</sub> and z<sub>i+1</sub>, not chosen from the previous joint.</li>
+    <li><b>Skew axes:</b> use the shortest common perpendicular between the two axis lines.</li>
+    <li><b>Intersecting axes:</b> choose x<sub>i</sub> normal to the plane spanned by the axes; apply the right-hand sign convention.</li>
+    <li><b>Parallel but distinct axes:</b> point x<sub>i</sub> along a perpendicular connector between them.</li>
+    <li><b>Coincident axes:</b> choose a convenient common perpendicular and preserve a consistent sign.</li>
+    <li><b>Place origins on z:</b> O<sub>i</sub> must lie on its own z<sub>i</sub> axis. Slide origins along that axis only when the complete D–H geometry remains consistent.</li>
+    <li><b>Reduce unnecessary constants:</b> use a shared origin where multiple joint-axis lines truly intersect. Never introduce an invisible graphical mounting offset.</li>
+    <li><b>Maintain right-handed frames:</b> y<sub>i</sub> is implicitly z<sub>i</sub> × x<sub>i</sub>; only red z and green x are drawn.</li>
+    <li><b>Ground and gripper:</b> fix O₀, x₀, z₀; the end-effector keeps the orientation of the last joint frame, though its tool origin may be offset.</li>
+    <li><b>Physical L is not automatically D–H a or d:</b> determine a, α, d, θ using the assigned frames, including their signs and actual origins.</li>
+    <li><b>Write joint variables symbolically:</b> θ<sub>i</sub> for R and d<sub>i</sub> for P. Define zero offsets separately; do not substitute expanded q expressions.</li>
+    <li><b>Recompute after every structural change:</b> adding/deleting/reorienting a joint or link must refresh frames, origin choices, table rows and student grading.</li>
+    <li><b>Check geometric consistency:</b> if chosen origins cause a nonzero MDH translation residual, the resulting parameter row is provisional and must be reviewed.</li>
+   </ol>
+  </div>
+ </div>
+ <div class="guidance-bottom">Suggested student sequence: <strong>identify joint axes → assign x/z → simplify origins → calculate a, α, d, θ → check and review feedback.</strong></div>
+</section>
+</main>
+<script>
+(()=>{'use strict';
+const $=s=>document.querySelector(s),svg=$('#scene'),editor=$('#editor');
+// Six-joint example matching the supplied side-on isometric sketch:
+// R1 at the ground pedestal → raised R2 → sloping upper arm with P3 and R4
+// → R5 at the outer corner → vertical R6 → downward two-finger gripper.
+// Default three-DOF reference: R1 → L1 (+Z, 1.75) → L2 (+X, 1.00) → R2 (+Z) → L3 (+X, 1.15) → P3 (+X) → L4 (−Z, 1.00).
+// Frame origin O1 is placed at the physical END of L1, not at an artificial 0.20 m mounting offset.
+// At the reference pose q2=0°, z3=+X, x2=+Y, x3=−Z:
+// θ3 = atan2(z3·(x2×x3),x2·x3) = −90°, even though joint 3 is prismatic.
+const initial=()=>[
+ {k:'J',type:'R',axis:'z',q:0,symbol:'sleeve'},
+ {k:'L',dir:'z',len:1.75},
+ {k:'L',dir:'x',len:1.00},
+ {k:'J',type:'R',axis:'z',q:0,symbol:'sleeve'},
+ {k:'L',dir:'x',len:1.15},
+ {k:'J',type:'P',axis:'x',q:0,symbol:'slide'},
+ {k:'L',dir:'-z',len:1.00}
+];
+// Full six-joint default, matching the wireframe classroom screenshot.
+const sixJointExample=()=>[
+ {k:'J',type:'R',axis:'z',q:0,symbol:'sleeve'},
+ {k:'L',dir:'z',len:1.75},
+ {k:'J',type:'R',axis:'y',q:0,symbol:'sleeve'},
+ {k:'L',dir:'x',len:1.15},
+ {k:'J',type:'P',axis:'x',q:0,symbol:'slide'},
+ {k:'L',dir:'x',len:1.55},
+ {k:'J',type:'R',axis:'x',q:0,symbol:'sleeve'},
+ {k:'L',dir:'x',len:.90},
+ {k:'J',type:'R',axis:'y',q:0,symbol:'sleeve'},
+ {k:'L',dir:'-z',len:.72},
+ {k:'J',type:'R',axis:'-z',q:0,symbol:'sleeve'},
+ {k:'L',dir:'-z',len:.40}
+];
+let items=initial(),frame1Shift=0,exampleKind="rrp",selected=-1,az=-1.05,el=.56,viewMode='iso',orbitAz=-1.05,orbitEl=.56,zoom=1,dragging=false,moved=false,lastX=0,lastY=0,downX=0,downY=0,suppressClick=false,animating=false,animationId=0;
+const flags={labels:true,dims:true,axes:false,guides:true,gripper:true,simplify:true,toolframe:true};
+let uidSeed=0;
+const numberParts=()=>items.forEach(e=>{if(!e.uid)e.uid=++uidSeed;});numberParts();
+let chosenJoint=1,lessonMode='frames',checkedFrames=false,showCorrect=false,checkedTable=false,showTableSolution=false;
+const studentAxis=new Map(),studentTable=new Map();
+let frameMarks=[],tableMarks=[],lastTableSignature='';
+const PARAMETERS=['a','alpha','d','theta'];
+
+const dirs={x:[1,0,0],'-x':[-1,0,0],y:[0,1,0],'-y':[0,-1,0],z:[0,0,1],'-z':[0,0,-1]};
+const add=(a,b)=>a.map((n,i)=>n+b[i]),sub=(a,b)=>a.map((n,i)=>n-b[i]),mul=(a,k)=>a.map(n=>n*k),dot=(a,b)=>a.reduce((s,n,i)=>s+n*b[i],0),cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],norm=a=>Math.hypot(...a),unit=a=>mul(a,1/(norm(a)||1));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const subs=n=>String(n).replace(/\d/g,d=>'₀₁₂₃₄₅₆₇₈₉'[+d]);
+const fmt=n=>(Math.abs(n)<.00001?0:n).toFixed(2);
+function rotate(a,axis,angle){const c=Math.cos(angle),s=Math.sin(angle);return add(add(mul(a,c),mul(cross(axis,a),s)),mul(axis,dot(axis,a)*(1-c)))}
+function model(){
+ let p=[0,0,0],basis=[[1,0,0],[0,1,0],[0,0,1]],j=0,l=0,prev='Base';
+ const nodes=items.map((e,i)=>{
+  if(e.k==='J'){
+   const axis=unit(add(add(mul(basis[0],(dirs[e.axis]||dirs.z)[0]),mul(basis[1],(dirs[e.axis]||dirs.z)[1])),mul(basis[2],(dirs[e.axis]||dirs.z)[2])));
+   const start=[...p];
+   if(e.type==='R')basis=basis.map(v=>rotate(v,axis,(e.q||0)*Math.PI/180));
+   else p=add(p,mul(axis,e.q||0));
+   const node={...e,i,n:++j,p:start,end:[...p],axisWorld:axis,frameX:[...basis[0]],frameY:[...basis[1]],frameZ:[...basis[2]],prev};prev='J'+j;
+   return node;
+  }
+  const d=dirs[e.dir]||dirs.x;
+  const direction=unit(add(add(mul(basis[0],d[0]),mul(basis[1],d[1])),mul(basis[2],d[2])));
+  const a=[...p];p=add(p,mul(direction,e.len));
+  const node={...e,i,n:++l,a,b:[...p],direction,prev};prev='L'+l;
+  return node;
+ });
+ const links=nodes.filter(e=>e.k==='L');
+ return {nodes,links,j,l,tool:[...p],toolDirection:links.length?links[links.length-1].direction:[1,0,0]};
+}
+let projection=()=>[0,0];
+function setup(g){
+ const sa=Math.sin(az),ca=Math.cos(az),se=Math.sin(el),ce=Math.cos(el);
+ const raw=p=>[-sa*p[0]+ca*p[1],-se*(ca*p[0]+sa*p[1])+ce*p[2]];
+ const base=[[0,0,-.35],[0,0,0],[.65,0,0],[0,0,.65]];
+ const all=base.concat(g.nodes.flatMap(e=>e.k==='J'?[e.p,e.end]:[e.a,e.b]));
+ if(flags.gripper)all.push(add(g.tool,mul(g.toolDirection,.50)));
+ const projected=all.map(raw),xx=projected.map(p=>p[0]),yy=projected.map(p=>p[1]);
+ const minx=Math.min(...xx),maxx=Math.max(...xx),miny=Math.min(...yy),maxy=Math.max(...yy);
+ const scale=Math.min(166,725/Math.max(2,maxx-minx),415/Math.max(1.55,maxy-miny))*zoom;
+ const ox=460-(minx+maxx)*scale/2,oy=280+(miny+maxy)*scale/2;
+ projection=p=>{const q=raw(p);return [ox+q[0]*scale,oy-q[1]*scale]};
+}
+const xy=p=>projection(p).map(n=>n.toFixed(1)).join(',');
+function line(a,b,color='#914858',w=2,attrs=''){const x=projection(a),y=projection(b);return `<line x1="${x[0]}" y1="${x[1]}" x2="${y[0]}" y2="${y[1]}" stroke="${color}" stroke-width="${w}" ${attrs}/>`}
+const polyline=(ps,col='#914858',w=2,attrs='')=>`<polyline points="${ps.map(xy).join(' ')}" fill="none" stroke="${col}" stroke-width="${w}" ${attrs}/>`;
+function text(p,t,dx=7,dy=-9,color='#334a65',size=16,weight='normal'){const q=projection(p);return `<text x="${q[0]+dx}" y="${q[1]+dy}" font-family="Georgia,serif" font-style="italic" font-weight="${weight}" font-size="${size}" fill="${color}" paint-order="stroke" stroke="#fff" stroke-width="3" stroke-linejoin="round">${esc(t)}</text>`}
+function triadArrow(from,vector,col,label,distance=.55){const to=add(from,mul(vector,distance));const a=projection(from),b=projection(to);const dx=b[0]-a[0],dy=b[1]-a[1],theta=Math.atan2(dy,dx);
+ const head=[[b[0],b[1]],[b[0]-10*Math.cos(theta-.47),b[1]-10*Math.sin(theta-.47)],[b[0]-10*Math.cos(theta+.47),b[1]-10*Math.sin(theta+.47)]];
+ return line(from,to,col,3,'stroke-linecap="round"')+`<polygon points="${head.map(p=>p.join(',')).join(' ')}" fill="${col}"/>`+text(to,label,5,-5,col,18,'bold');}
+// Standard D–H axis direction rule used here:
+// z_i is the physical axis of joint i; x_i is the common normal of z_i AND z_(i+1).
+// For nonparallel intersecting axes x_i is normal to their plane.
+// Distinct parallel axes use the shortest perpendicular connector;
+// coincident axes and the terminal frame use a consistent convenient perpendicular.
+const EPS=1e-6;
+function perpendicularTo(v,preferred){
+ let w=sub(preferred,mul(v,dot(preferred,v)));
+ if(norm(w)<EPS){
+  const candidates=[[1,0,0],[0,0,-1],[0,1,0]];
+  for(const c of candidates){w=sub(c,mul(v,dot(c,v)));if(norm(w)>EPS)break;}
+ }
+ return unit(w);
+}
+function preferSign(x,prefer){return dot(x,prefer)<-1e-8?mul(x,-1):x;}
+function easyDirection(z,primary=[0,0,-1]){
+ return perpendicularTo(z,primary);
+}
+// For intersecting axes either sign is mathematically valid. We make the
+// classroom drawing predictable by using +X on frame 1, downward otherwise
+// where possible, then -X or +Y as conventional choices.
+function preferredFrameDirection(index,joint,candidate){
+ // Use directions attached to the moving robot, not fixed world directions,
+ // so an x-axis does NOT suddenly reverse while a revolute joint is animated.
+ if(index===0)return joint.frameX;
+ // Prefer the rotated local +x direction for intersecting joints when it is a valid plane normal.
+ // This yields x2=+Y (reference pose) and alpha2=+90° for the corrected R–R–P exercise.
+ const preferences=[joint.frameX,mul(joint.frameZ,-1),joint.frameY,mul(joint.frameX,-1)];
+ if(candidate){
+  for(const pref of preferences)if(Math.abs(dot(candidate,pref))>.25)return pref;
+ }
+ return preferences[0];
+}
+function betweenAxes(a,b,index){
+ const u=unit(a.axisWorld),v=unit(b.axisWorld),A=a.end,B=b.end;
+ const w=sub(B,A),uv=dot(u,v),d=dot(u,w),e=dot(v,w),den=1-uv*uv;
+ let from,to,xx,kind;
+ if(den>1e-8){
+  // The closest-point pair on two nonparallel infinite lines.
+  // from=A+s*u, to=B+t*v; (to-from) orthogonal to both axes.
+  const t=(uv*d-e)/den,s=d+uv*t;
+  from=add(A,mul(u,s));to=add(B,mul(v,t));
+  const connector=sub(to,from);
+  if(norm(connector)>EPS){
+   xx=unit(connector);kind='Skew';
+  }else{
+   xx=unit(cross(u,v));xx=preferSign(xx,preferredFrameDirection(index,a,xx));
+   kind='Intersecting';
+  }
+ }else{
+  from=add(A,mul(u,d));to=B;
+  const connector=sub(to,from);
+  if(norm(connector)>EPS){xx=unit(connector);kind='Parallel';}
+  else{
+   xx=easyDirection(u,preferredFrameDirection(index,a,null));
+   kind='Coincident';
+  }
+ }
+ // Project away numerical drift (in particular near-parallel axes).
+ if(kind!=='Parallel'&&kind!=='Skew'){
+  xx=unit(sub(xx,mul(u,dot(xx,u))));
+ }
+ return {x:xx,from,to,kind,perpendicularError:Math.max(Math.abs(dot(xx,u)),Math.abs(dot(xx,v)))};
+}
+// A frame origin may slide on its OWN z-axis without changing that z-axis.
+// We only make the common-point simplification where all involved joint-axis
+// lines ACTUALLY meet: no false assumptions for skew or displaced axes.
+const ORIGIN_TOL=1e-5;
+function pointToAxisDistance(point,j){
+ const d=sub(point,j.end),onAxis=mul(j.axisWorld,dot(d,j.axisWorld));
+ return norm(sub(d,onAxis));
+}
+function sharedOriginGroups(joints){
+ const n=joints.length,candidates=[];
+ // Joint positions and closest-point constructions furnish intersection candidates.
+ for(const j of joints){candidates.push(j.p,j.end);}
+ for(let a=0;a<n;a++)for(let b=a+1;b<n;b++){
+  const pair=betweenAxes(joints[a],joints[b],a);
+  if(norm(sub(pair.from,pair.to))<ORIGIN_TOL)candidates.push(mul(add(pair.from,pair.to),.5));
+ }
+ const groups=[];
+ for(let i=1;i<n-1;i++)for(let j=i+2;j<n;j++){
+  let best=null;
+  for(const candidate of candidates){
+   const err=Math.max(...joints.slice(i,j+1).map(x=>pointToAxisDistance(candidate,x)));
+   if(err<ORIGIN_TOL){
+    const travel=joints.slice(i,j+1).reduce((sum,x)=>sum+norm(sub(candidate,x.end)),0);
+    if(!best||travel<best.travel-1e-10)best={point:[...candidate],travel};
+   }
+  }
+  if(best)groups.push({start:i,end:j,origin:best.point,length:j-i+1,travel:best.travel});
+ }
+ // Longer concurrency groups have priority over smaller overlapping ones.
+ groups.sort((a,b)=>b.length-a.length||a.travel-b.travel);
+ const used=new Set(),accepted=[];
+ for(const group of groups){
+  if(Array.from({length:group.length},(_,k)=>k+group.start).some(i=>used.has(i)))continue;
+  accepted.push(group);
+  for(let i=group.start;i<=group.end;i++)used.add(i);
+ }
+ return accepted.sort((a,b)=>a.start-b.start);
+}
+// Select O1 from the actual physical mechanism: move along z1 through the initial
+// consecutive axial links until the first non-axial link. This places O1 at the
+// endpoint of L1 in the corrected example. No graphical mounting offsets count.
+function firstPhysicalFrameOrigin(g,joints){
+ if(!joints.length)return [0,0,0];
+ const j=joints[0],nextIndex=joints[1]?.i??g.nodes.length;
+ let location=[...j.end];
+ for(let k=j.i+1;k<nextIndex;k++){
+  const e=g.nodes[k];if(e.k!=='L')break;
+  const motion=sub(e.b,e.a),longitudinal=mul(j.axisWorld,dot(motion,j.axisWorld));
+  if(norm(sub(motion,longitudinal))>1e-5*Math.max(1,norm(motion)))break;
+  location=[...e.b];
+ }
+ return add(location,mul(j.axisWorld,frame1Shift));
+}
+function terminalPhysicalX(g,joints,previousX){
+ const last=joints[joints.length-1],z=last.axisWorld;
+ // The final frame may use the downstream TOOL-OFFSET direction perpendicular
+ // to the last joint axis, rather than arbitrarily copying x_(n-1).
+ for(let k=g.nodes.length-1;k>last.i;k--){
+  const e=g.nodes[k];if(e.k!=='L')continue;
+  const component=sub(e.direction,mul(z,dot(e.direction,z)));
+  if(norm(component)>1e-5)return unit(component);
+ }
+ return perpendicularTo(z,previousX||[1,0,0]);
+}
+function dhFrameAxes(g){
+ const joints=g.nodes.filter(e=>e.k==='J'),results=[];
+ for(let i=0;i<joints.length;i++){
+  const j=joints[i];
+  let x,origin,kind,error=0,next=null,from=null,to=null;
+  if(i<joints.length-1){
+   const pair=betweenAxes(j,joints[i+1],i);
+   x=pair.x;kind=pair.kind;error=pair.perpendicularError;
+   from=pair.from;to=pair.to;next=i+2;
+   origin=pair.from;
+  }else{
+   const desired=i>0?results[i-1].x:[1,0,0];
+   x=terminalPhysicalX(g,joints,desired);
+   origin=j.end;kind='Terminal choice';error=Math.abs(dot(x,j.axisWorld));
+  }
+  results.push({origin,x,z:j.axisWorld,i:i+1,kind,next,error,from,to,elementIndex:j.i,originChoice:i===0?'Ground-aligned':'Common normal'});
+ }
+  // One common frame-origin policy applies to the drawing AND to the grading key.
+  // The first origin may slide along z1 via a visible teaching control.
+  if(results.length){
+   results[0].origin=firstPhysicalFrameOrigin(g,joints);
+   results[0].originChoice='Physical link endpoint + Δ along z₁';
+  }
+ // For coincident axes, choose x_i to match the next frame if that reduces
+ // unnecessary constant rotation; any common normal direction is allowed.
+ for(let i=results.length-2;i>=0;i--){
+  if(results[i].kind==='Coincident'){
+   results[i].x=perpendicularTo(results[i].z,results[i+1].x);
+  }
+ }
+ let groups=[];
+ if(flags.simplify){
+  groups=sharedOriginGroups(joints);
+  for(let k=0;k<groups.length;k++){
+   const g0=groups[k];
+   for(let i=g0.start;i<=g0.end;i++){
+    results[i].origin=[...g0.origin];
+    results[i].originChoice='Shared O'+subs(g0.start+1)+'–O'+subs(g0.end+1);
+    results[i].sharedGroup=k+1;
+   }
+  }
+ }
+ for(let i=0;i<results.length;i++){
+  if(joints[i].flipX)results[i].x=mul(results[i].x,-1);
+  results[i].error=i<results.length-1?Math.max(Math.abs(dot(results[i].x,results[i].z)),Math.abs(dot(results[i].x,results[i+1].z))):Math.abs(dot(results[i].x,results[i].z));
+  results[i].onJointAxis=pointToAxisDistance(results[i].origin,joints[i]);
+ }
+ return {frames:results,groups};
+}
+function toolFrame(g,frames){
+ const last=frames[frames.length-1];
+ return last?{origin:[...g.tool],x:[...last.x],z:[...last.z],parent:frames.length}:
+ {origin:[...g.tool],x:[1,0,0],z:[0,0,1],parent:0};
+}
+function ring(p,axis,r=.155,n=28){const ref=Math.abs(dot(axis,[0,0,1]))>.9?[1,0,0]:[0,0,1],u=unit(cross(axis,ref)),w=unit(cross(axis,u));return Array.from({length:n+1},(_,i)=>add(p,add(mul(u,r*Math.cos(i*2*Math.PI/n)),mul(w,r*Math.sin(i*2*Math.PI/n)))))}
+function jointShape(e){
+ let h='',center=e.type==='P'?mul(add(e.p,e.end),.5):e.p,q=projection(center);
+ if(e.i===selected)h+=`<circle cx="${q[0]}" cy="${q[1]}" r="32" fill="#dfebfe" stroke="#73a1ed" stroke-width="2"/>`;
+ if(e.type==='R'){
+  if(e.symbol==='pin')h+=`<circle cx="${q[0]}" cy="${q[1]}" r="15" fill="#fff" stroke="#8c4356" stroke-width="2.5"/><circle cx="${q[0]}" cy="${q[1]}" r="4" fill="#8c4356"/>`;
+  else{
+   const aa=ring(add(center,mul(e.axisWorld,-.14)),e.axisWorld),bb=ring(add(center,mul(e.axisWorld,.14)),e.axisWorld);
+   h+=polyline(aa,'#914858',2.1)+polyline(bb,'#914858',2.1);
+   for(const k of [0,7,14,21])h+=line(aa[k],bb[k],'#914858',1.5);
+  }
+ }else{
+  // Clean telescoping prismatic joint: two parallel rails, a rectangular carriage and a centre shaft.
+  // It replaces the bow-tie / double-triangle symbol in the previous prototype.
+  const p=projection(add(center,mul(e.axisWorld,-.32))),t=projection(add(center,mul(e.axisWorld,.32)));
+  const theta=Math.atan2(t[1]-p[1],t[0]-p[0])*180/Math.PI;
+  h+=`<g transform="translate(${q[0].toFixed(2)} ${q[1].toFixed(2)}) rotate(${theta.toFixed(2)})">
+  <rect x="-34" y="-12" width="68" height="24" fill="#fff" stroke="#914858" stroke-width="2.5" rx="1"/>
+  <line x1="-44" y1="0" x2="44" y2="0" stroke="#914858" stroke-width="2.2"/>
+  <rect x="-7" y="-16" width="22" height="32" fill="#f7ebed" stroke="#914858" stroke-width="2.4" rx="1"/>
+  <line x1="-34" y1="-17" x2="-34" y2="17" stroke="#914858" stroke-width="2"/>
+  </g>`;
+ }
+ if(flags.labels)h+=text(center,e.type+subs(e.n),21,-23,'#283b52',16,'bold');
+ return `<g data-index="${e.i}" style="cursor:pointer">${h}<circle cx="${q[0]}" cy="${q[1]}" r="30" fill="transparent"/></g>`;
+}
+function dimension(e){const a=projection(e.a),b=projection(e.b),dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy)||1;
+ const nx=-dy/len*30,ny=dx/len*30,p=[a[0]+nx,a[1]+ny],q=[b[0]+nx,b[1]+ny];
+ const L=`L${subs(e.n)}`;
+ const ext=`<line x1="${a[0]}" y1="${a[1]}" x2="${p[0]}" y2="${p[1]}" stroke="#2563dc" stroke-width="1.2" stroke-dasharray="4 4"/><line x1="${b[0]}" y1="${b[1]}" x2="${q[0]}" y2="${q[1]}" stroke="#2563dc" stroke-width="1.2" stroke-dasharray="4 4"/>`;
+ return ext+`<line x1="${p[0]}" y1="${p[1]}" x2="${q[0]}" y2="${q[1]}" stroke="#2563dc" stroke-width="2" marker-start="url(#dimarrow)" marker-end="url(#dimarrow)"/><text x="${(p[0]+q[0])/2+nx*.28}" y="${(p[1]+q[1])/2+ny*.28-7}" fill="#245ee0" font-family="Georgia,serif" font-size="18" font-style="italic" text-anchor="middle" paint-order="stroke" stroke="white" stroke-width="4">${L}</text>`;
+}
+function gripper(g,tf){
+ // Fixed tool mounting: gripper opening and pointing direction are inherited
+ // from the final joint frame, never recomputed from the last link direction.
+ const p=g.tool,d=unit(tf.z),side=unit(tf.x),width=.14;
+ const wrist=add(p,mul(d,.10)),jawBase=add(wrist,mul(d,.11)),fingerEnd=.29;
+ const left=add(jawBase,mul(side,width)),right=add(jawBase,mul(side,-width));
+ let h=line(p,wrist,'#914858',3.2)+line(add(wrist,mul(side,width)),add(wrist,mul(side,-width)),'#914858',3.2);
+ h+=line(wrist,jawBase,'#914858',2.5);
+ h+=line(left,add(left,mul(d,fingerEnd)),'#914858',2.8)+line(right,add(right,mul(d,fingerEnd)),'#914858',2.8);
+ h+=line(add(left,mul(d,fingerEnd)),add(left,add(mul(d,fingerEnd),mul(side,-.045))),'#914858',2);
+ h+=line(add(right,mul(d,fingerEnd)),add(right,add(mul(d,fingerEnd),mul(side,.045))),'#914858',2);
+ return h;
+}
+// Reconstruct a home-pose model (all q=0) WITHOUT changing the displayed pose.
+// Modified-DH constants should not fluctuate as a student moves a joint.
+function homeFrameGeometry(){
+ const old=items.filter(e=>e.k==='J').map(e=>e.q);
+ items.filter(e=>e.k==='J').forEach(e=>e.q=0);
+ let g,geometry;
+ try{g=model();geometry=dhFrameAxes(g);}finally{items.filter(e=>e.k==='J').forEach((e,i)=>e.q=old[i]);}
+ return {g,geometry};
+}
+function angleDegrees(x){
+ let v=x*180/Math.PI;
+ if(!Number.isFinite(v))return 0;
+ if(Math.abs(v)<1e-7)return 0;
+ if(Math.abs(v-180)<1e-6)return 180;
+ if(Math.abs(v+180)<1e-6)return -180;
+ return +v.toFixed(5);
+}
+function angleLabel(deg){
+ if(Math.abs(deg)<.05)return '0°';
+ let v=+deg.toFixed(1);
+ return (v<0?'−':'')+Math.abs(v)+'°';
+}
+function scalarLabel(x){
+ const n=Math.abs(x)<.00005?0:x;
+ return n===0?'0':(n<0?'−':'')+Math.abs(n).toFixed(2);
+}
+function formatLiveTheta(n){return (n<-.0001?'−':'')+Math.abs(+n.toFixed(1))+'°';}
+function projectedSignedAngle(a,b,axis){
+ const av=perpendicularTo(axis,a),bv=perpendicularTo(axis,b);
+ return angleDegrees(Math.atan2(dot(axis,cross(av,bv)),dot(av,bv)));
+}
+// Parameter extraction for the USER'S modified DH definitions:
+// a_(i-1) and alpha_(i-1) relate z_(i-1) to z_i about x_(i-1).
+// d_i and theta_i relate the corresponding x axes along/about z_i.
+// A residual is reported rather than presenting arbitrary origins as exact.
+function deriveDynamicMDH(){
+ const {g,geometry}=homeFrameGeometry();
+ const joints=g.nodes.filter(n=>n.k==='J'),frames=geometry.frames;
+ if(!joints.length)return {rows:[],geometry,reference:false,errors:[]};
+ const refRoot=frames[0];
+ // For the taught default, ground x0 points +X and ground z0 tracks first joint axis.
+ const z0=[...joints[0].axisWorld],x0=perpendicularTo(z0,[1,0,0]);
+ // O0 is the base mounting point rather than an arbitrary point on a later joint.
+ const ground=[0,0,0],rows=[],errors=[];
+ for(let k=0;k<joints.length;k++){
+  const j=joints[k],f=frames[k];
+  const previous=k===0?{origin:ground,x:x0,z:z0}:frames[k-1];
+  const nextZ=f.z,prevX=previous.x,prevZ=previous.z;
+  const delta=sub(f.origin,previous.origin);
+  // Signed twist around the preceding x-axis.
+  const alpha=angleDegrees(Math.atan2(dot(prevX,cross(prevZ,nextZ)),dot(prevZ,nextZ)));
+  // Since x_(i-1) ⟂ z_i, the translation should resolve as a*x_(i-1)+d*z_i.
+  const a=dot(delta,prevX),d=dot(delta,nextZ);
+  const leftover=sub(delta,add(mul(prevX,a),mul(nextZ,d)));
+  const residual=norm(leftover);
+  // Signed rotation about the current joint z-axis after twisting z_(i-1) into z_i.
+  const theta=projectedSignedAngle(prevX,f.x,nextZ);
+  let row={number:k+1,type:j.type,joint:j,elementIndex:j.i,a,alpha,d,theta,residual,kind:k===0?'Base':frames[k-1].kind};
+  rows.push(row);
+  if(residual>.005)errors.push(row);
+ }
+ // Only one instructor solution is presented: the one derived from the actual
+ // joint axes, physical link endpoints and current frame-origin shift.
+ const reference=joints.length===3&&joints.map(j=>j.type).join('')==='RRP';
+ return {rows,g,geometry,reference,errors};
+}
+// ================= STUDENT INTERACTIVE LESSON =================
+const axisOptions=[['','Choose a direction…'],['x','+X (right)'],['-x','−X (left)'],['y','+Y (depth)'],['-y','−Y (depth)'],['z','+Z (up)'],['-z','−Z (down)'],['custom','Custom 3D direction (two sliders)']];
+const radians=v=>v*Math.PI/180;
+const studentVector=(uid,key)=>{
+ const item=studentAxis.get(uid),selected=item?.[key];
+ if(!selected)return null;
+ if(selected==='custom'){
+  const azimuth=radians(item[key+'Az']??0),elevation=radians(item[key+'El']??0);
+  return [Math.cos(elevation)*Math.cos(azimuth),Math.cos(elevation)*Math.sin(azimuth),Math.sin(elevation)];
+ }
+ return dirs[selected]?[...dirs[selected]]:null;
+};
+function getStudent(uid){if(!studentAxis.has(uid))studentAxis.set(uid,{});return studentAxis.get(uid)}
+function getStudentRow(uid){if(!studentTable.has(uid))studentTable.set(uid,{});return studentTable.get(uid)}
+function geometryOfCurrent(){const g=model();return {g,frames:dhFrameAxes(g).frames,joints:g.nodes.filter(e=>e.k==='J')};}
+function renderFrameChoices(){
+ const {joints}=geometryOfCurrent();
+ if(joints.length===0){$('#student-joints').innerHTML='No joints. Add a revolute or prismatic joint first.';return}
+ if(chosenJoint>joints.length)chosenJoint=joints.length;
+ $('#student-joints').innerHTML=joints.map((j,i)=>`<button type="button" class="joint-chip ${chosenJoint===i+1?'active':''}" data-choose-joint="${i+1}" aria-pressed="${chosenJoint===i+1}">J${subs(i+1)} · ${j.type}</button>`).join('');
+ const joint=joints[chosenJoint-1],data=getStudent(joint.uid);
+ for(const key of ['z','x']){
+  const el=$('#student-'+key);
+  el.innerHTML=axisOptions.map(([val,label])=>`<option value="${val}" ${val===(data[key]||'')?'selected':''}>${label}</option>`).join('');
+  const custom=$('#custom-'+key);custom.hidden=data[key]!=='custom';
+  for(const a of ['Az','El']){
+   const range=$('#'+key+'-'+a.toLowerCase());range.value=data[key+a]??0;
+   $('#'+key+'-'+a.toLowerCase()+'-value').textContent=range.value+'°';
+  }
+ }
+ $('#student-preview').textContent=`J${chosenJoint}: z ${data.z||'not selected'} · x ${data.x||'not selected'}. Choose axes and check your answers.`;
+}
+function checkStudentFrames(){
+ const {joints,frames}=geometryOfCurrent();frameMarks=[];
+ let correct=0,attempted=0;
+ for(let k=0;k<joints.length;k++){
+  const j=joints[k],f=frames[k],student=getStudent(j.uid),sz=studentVector(j.uid,'z'),sx=studentVector(j.uid,'x');
+  const next=joints[k+1],messages=[];
+  let zgood=false,xgood=false;
+  if(sz){attempted++;let aline=dot(sz,f.z);zgood=aline>=.985;
+   // Reference uses the displayed positive joint direction; a reversed z would require a different signed MDH table.
+   if(zgood){correct++;messages.push(`z${subs(k+1)}: aligned with the physical ${j.type==='R'?'rotation':'sliding'} axis.${dot(sz,f.z)<0?' You reversed its positive direction, so the joint-variable sign must be handled consistently.':''}`)}
+   else messages.push(`z${subs(k+1)}: ${aline<-.985?'Your axis lies on the correct line but points opposite to the selected positive joint direction.':'This is not the physical axis of the '+(j.type==='R'?'revolute shaft':'prismatic rail')+'.'} The worksheet uses one consistent instructor sign convention.`);
+  }else messages.push(`z${subs(k+1)}: not assigned. Identify the physical joint ${j.type==='R'?'rotation':'translation'} direction first.`);
+  if(sx){attempted++;const zUsed=sz||f.z;
+   const orth=Math.abs(dot(sx,f.z));const orth2=next?Math.abs(dot(sx,next.axisWorld)):0;
+   const parallel=dot(sx,f.x);
+   xgood=orth<.16&&orth2<.16&&parallel>=.985;
+   // For a single, consistent worksheet we require the reference x sign; alternate valid signs need their own recalculated table.
+   if(!zgood&&Math.abs(dot(sx,zUsed))>.16)xgood=false;
+   if(xgood){correct++;messages.push(`x${subs(k+1)}: correct for ${f.kind.toLowerCase()} axes.${dot(sx,f.x)<-.985?' The opposite x sign is also geometrically valid; the D–H signs must follow that choice.':''}`)}
+   else{
+    const rule={Skew:'For skew axes, x is along the shortest connector perpendicular to BOTH joint axes.',Intersecting:'When two joint axes intersect, x is normal to the plane they form (cross-product direction).',Parallel:'For separate parallel axes, x points along their perpendicular connector.',Coincident:'For coincident axes, choose any convenient direction perpendicular to their shared z-axis.','Terminal choice':'For the last joint, choose x perpendicular to its z-axis. Use the orientation of the final tool offset as a convenient choice when it is perpendicular; compute any constant θ from the signed angle.'}[f.kind]||'Choose the common normal to the current and following axis.';
+    messages.push(`x${subs(k+1)}: ${rule}`);
+    if(orth>=.16||orth2>=.16)messages.push('Check that x·z = 0 for the adjacent joint-axis directions.');
+    else if(parallel<-.985)messages.push('This reversed x-axis is geometrically permissible, but the instructor reference uses the opposite positive direction. Keeping one sign convention gives a single consistent D–H answer table.');
+   }
+  }else messages.push(`x${subs(k+1)}: not assigned. Compare z${subs(k+1)} with ${next?'z'+subs(k+2):'the tool axis'}.`);
+  frameMarks.push({i:k+1,zgood,xgood,kind:f.kind,messages});
+ }
+ checkedFrames=true;showCorrect=false;
+ const total=joints.length*2;
+ const feedback=frameMarks.map(m=>`<div class="feedback-item ${m.zgood&&m.xgood?'correct':'incorrect'}"><b>J${subs(m.i)} — ${m.zgood&&m.xgood?'Correct':'Review'}</b><div>${m.messages.join('<br>')}</div></div>`).join('');
+ $('#frames-feedback').innerHTML=`<div class="feedback-summary">Frame score: ${correct}/${total} axis directions (${attempted} submitted)</div>${feedback}`;
+ $('#activity-status').textContent=`Frames ${correct}/${total} · check then proceed`;
+ $('#compare-frames').disabled=false;
+ $('#go-table').disabled=false;
+ $('#axes').disabled=false;
+ renderScene();
+}
+function clearStudentFrames(){studentAxis.clear();checkedFrames=false;showCorrect=false;frameMarks=[];$('#frames-feedback').innerHTML='<h4>Try again</h4>Assign the red z and green x directions at each joint, then check your answers.';$('#compare-frames').disabled=true;$('#axes').checked=false;flags.axes=false;$('#frame-card').hidden=true;$('#activity-status').textContent='Student mode · answers hidden';renderFrameChoices();renderScene()}
+function updateLessonMode(){
+ const frameMode=lessonMode==='frames';
+ $('#frame-exercise').hidden=!frameMode;$('#table-exercise-top').hidden=frameMode;
+ $('#stage-frames').classList.toggle('active',frameMode);$('#stage-mdh').classList.toggle('active',!frameMode);
+ if(!frameMode){renderStudentMDH(true)};
+}
+function parseNumberish(value,isAngle){
+ const v=value.toLowerCase().trim().replace(/−/g,'-').replace(/\s/g,'').replace(/°/g,'').replace(/meters?|metres?|m$/g,'').replace(/π/g,'pi').replace(/\*/g,'');
+ if(v==='pi')return isAngle?180:NaN;if(v==='-pi')return isAngle?-180:NaN;
+ const pi=v.match(/^([-+]?)(\d*\.?\d*)?pi(?:\/(\d+(?:\.\d+)?))?$/);
+ if(pi&&isAngle)return (pi[1]==='-'?-1:1)*(pi[2]?+pi[2]:1)*180/(pi[3]?+pi[3]:1);
+ return /^[-+]?\d+(?:\.\d+)?$/.test(v)?+v:NaN;
+}
+function normAnswer(s){return s.toLowerCase().trim().replace(/−/g,'-').replace(/θ/g,'theta').replace(/₀/g,'0').replace(/₁/g,'1').replace(/₂/g,'2').replace(/₃/g,'3').replace(/₄/g,'4').replace(/₅/g,'5').replace(/₆/g,'6').replace(/₇/g,'7').replace(/₈/g,'8').replace(/₉/g,'9').replace(/[_\s{}()]/g,'')}
+function answerText(row,key){
+ if(row.type==='R'&&key==='theta')return 'θ'+subs(row.number);
+ if(row.type==='P'&&key==='d')return 'd'+subs(row.number);
+ if(key==='a'||key==='d')return scalarLabel(row[key]);
+ return angleLabel(row[key]);
+}
+function verifyAnswer(value,row,key,reference){
+ const input=normAnswer(value);
+ const dynamic=(row.type==='R'&&key==='theta')||(row.type==='P'&&key==='d');
+ if(dynamic){const target=normAnswer((key==='theta'?'θ':'d')+String(row.number));return input===target;}
+ if(!input)return false;
+ const isAngle=(key==='theta'||key==='alpha');const parsed=parseNumberish(value,isAngle);
+ return Number.isFinite(parsed)&&Math.abs(parsed-row[key])<=(isAngle?.55:.012);
+}
+function explanation(row,key){
+ if(exampleKind==='rrp'&&items.length===7&&key==='d'&&row.number===1)return `Place O₀ at the ground and O₁ at the end of physical L₁. Their signed separation along z₁ is d₁ = L₁ + Δ = ${fmt(row.d)} m. Do not invent an additional 0.20 m mounting height.`;
+ if(exampleKind==='rrp'&&items.length===7&&key==='d'&&row.number===2)return `For this configuration, O₂ is at the second revolute joint. Its height equals the endpoint of L₁, so d₂ = −Δ = ${fmt(row.d)} m along z₂. Sliding O₁ affects both d₁ and d₂ consistently.`;
+ if(exampleKind==='rrp'&&items.length===7&&key==='theta'&&row.number===3&&row.type==='P')return `J₃ is prismatic, so d₃ is variable; θ₃ is not necessarily zero. Use θ₃ = atan2[z₃ · (x₂ × x₃), x₂ · x₃]. The right-hand signed rotation for this frame assignment is ${angleLabel(row.theta)} (−90° in the unmodified example).`;
+ if(key==='a')return `a${subs(row.number-1)} is the signed shortest separation between z${subs(row.number-1)} and z${subs(row.number)}, measured along x${subs(row.number-1)}. Intersecting axes give zero.`;
+ if(key==='alpha')return `α${subs(row.number-1)} is the signed twist from z${subs(row.number-1)} to z${subs(row.number)} about x${subs(row.number-1)} (right-hand rule).`;
+ if(key==='d')return row.type==='P'?`Joint ${row.number} is prismatic: the variable entry must be d${subs(row.number)}, not an expanded fixed offset plus q.`:`d${subs(row.number)} is the signed offset along z${subs(row.number)} from the preceding x-axis to this frame's x-axis.`;
+ return row.type==='R'?`Joint ${row.number} is revolute: write θ${subs(row.number)} for its variable; any fixed calibration offset belongs in the zero-reference definition.`:`θ${subs(row.number)} is a constant rotation between x${subs(row.number-1)} and x${subs(row.number)}, measured about z${subs(row.number)}.`;
+}
+function renderStudentMDH(force=false){
+ const derived=deriveDynamicMDH(),rows=derived.rows;const target=$('#mdh-rows');
+ const signature=rows.map(row=>`${row.joint.uid}:${row.type}:${[row.a,row.alpha,row.d,row.theta].map(v=>fmt(v)).join(',')}`).join('|');
+ if(!force&&signature===lastTableSignature)return;
+ lastTableSignature=signature;
+ target.innerHTML=rows.map(row=>{
+  const input=getStudentRow(row.joint.uid),mark=tableMarks.find(m=>m.uid===row.joint.uid);
+  return `<tr data-mdh="${row.number}"><td><b>J${subs(row.number)} · ${row.type}</b></td>${PARAMETERS.map(key=>`<td class="ans"><input data-uid="${row.joint.uid}" data-param="${key}" class="answer-input ${checkedTable&&mark?(mark[key]?'good':'bad'):''}" aria-label="Joint ${row.number}, ${key}" autocomplete="off" spellcheck="false" inputmode="text" placeholder="?" value="${esc(input[key]||'')}"></td>`).join('')}<td class="dh-live-col">${checkedTable&&mark?`<b class="${PARAMETERS.every(k=>mark[k])?'row-correct-message':'row-error-message'}">${PARAMETERS.filter(k=>mark[k]).length}/4</b>`:'—'}</td></tr>`;
+ }).join('')||'<tr><td colspan="6">Add a joint to begin.</td></tr>';
+ const errors=rows.filter(row=>row.residual>.005);
+ $('#mdh-alert').hidden=!errors.length;
+ if(errors.length)$('#mdh-alert').textContent=`Geometry warning: ${errors.length} row(s) have a nonzero frame-translation residual (${errors.map(r=>'J'+r.number).join(', ')}). Their parameters are provisional; adjust the frame origins before treating the table as an exact MDH result.`;
+ $('#mdh-note').textContent=`${rows.length} current D–H rows; geometric constants from the zero-joint pose. Frame origins and answer checking use exactly the same geometric model; no hidden mounting height is added.`;
+ if(showTableSolution)renderTeacherSolution();
+}
+function checkStudentTable(){
+ const d=deriveDynamicMDH(),rows=d.rows;tableMarks=[];let score=0,total=0;
+ const issues=[];
+ for(const row of rows){
+  const answer=getStudentRow(row.joint.uid),mark={uid:row.joint.uid};
+  for(const key of PARAMETERS){
+   const good=verifyAnswer(answer[key]||'',row,key,d);mark[key]=good;score+=Number(good);total++;
+   if(!good)issues.push({row,key,submitted:(answer[key]||'').trim()});
+  }
+  tableMarks.push(mark);
+ }
+ checkedTable=true;showTableSolution=false;lastTableSignature='';renderStudentMDH(true);
+ const preview=issues.slice(0,14).map(({row,key,submitted})=>`<div class="feedback-item incorrect"><b>J${subs(row.number)} · ${key==='a'?'a'+subs(row.number-1):key==='alpha'?'α'+subs(row.number-1):key+subs(row.number)}</b> ${submitted?`You entered “${esc(submitted)}”.`:'No answer.'} ${explanation(row,key)}</div>`).join('');
+ $('#mdh-feedback').innerHTML=`<div class="feedback-summary">D–H score: ${score}/${total} parameter cells</div>${issues.length?preview+(issues.length>14?`<p>${issues.length-14} further cells need checking.</p>`:''):'<div class="feedback-item correct">All entries match the geometric solution for the current frame convention.</div>'}`;
+ $('#activity-status').textContent=`D–H ${score}/${total} · checked`;
+ $('#reveal-mdh').disabled=false;$('#mdh-solution').hidden=true;
+}
+function renderTeacherSolution(){
+ const d=deriveDynamicMDH(),rows=d.rows;
+ const body=rows.map(row=>`<tr><td>J${subs(row.number)} · ${row.type}</td>${PARAMETERS.map(key=>`<td>${answerText(row,key)}</td>`).join('')}</tr>`).join('');
+ $('#mdh-solution').innerHTML=`<b>Instructor solution · computed from geometric frames</b><table><thead><tr><th>Joint</th><th>aᵢ₋₁</th><th>αᵢ₋₁</th><th>dᵢ</th><th>θᵢ</th></tr></thead><tbody>${body}</tbody></table><div class="safety-note">Joint variables use θᵢ for revolute joints and dᵢ for prismatic joints. A prismatic joint may still have a nonzero CONSTANT θᵢ (J₃ has −90° in the corrected reference). Fixed zero-pose offsets follow the selected frame origins. Nonzero geometric residuals are flagged above; reassign any incompatible origins before using such rows as an exact MDH model.</div>`;
+ $('#mdh-solution').hidden=false;
+}
+function markStructureChanged(){
+ checkedFrames=false;showCorrect=false;checkedTable=false;showTableSolution=false;frameMarks=[];tableMarks=[];lastTableSignature='';
+ $('#frames-feedback').innerHTML='<h4>Mechanism changed</h4>Reassign and check the axes for the modified chain; old feedback no longer applies.';
+ $('#mdh-feedback').textContent='Geometry changed. Recheck the D–H table after reviewing your frame assignments.';
+ $('#mdh-solution').hidden=true;$('#reveal-mdh').disabled=true;$('#compare-frames').disabled=true;$('#frame-card').hidden=true;
+ flags.axes=false;$('#axes').checked=false;
+ $('#activity-status').textContent='Mechanism edited · check again';
+ renderFrameChoices();
+}
+function renderGeometricProof(){
+ const d=deriveDynamicMDH(),rows=d.rows;
+ const r1=rows[0],r2=rows[1],r3=rows[2];
+ $('#origin-shift-value').textContent='Δ = '+(frame1Shift>=0?'+':'−')+fmt(Math.abs(frame1Shift))+' m';
+ const rrp=exampleKind==='rrp'&&r1&&r2&&r3&&r1.type==='R'&&r2.type==='R'&&r3.type==='P';
+ $('#geometry-proof').innerHTML=rrp?`<b>Geometric check (zero-joint reference)</b><div>d₁ = ${fmt(r1.d)} m · d₂ = ${fmt(r2.d)} m</div><div>α₂ = ${angleLabel(r3.alpha)} · θ₃ = ${angleLabel(r3.theta)}</div><div class="${d.errors.length?'':'success-math'}">${d.errors.length?'Frame-origin residual detected: check the highlighted D–H rows.':'✓ Frame translations are geometrically consistent.'}</div>`:
+ `<b>Geometry-driven parameters</b><div>${rows.length} joints; any incompatible D–H origin choice is flagged in the table.</div>`;
+ $('#load-rrp').setAttribute('aria-pressed',exampleKind==='rrp'?'true':'false');
+ $('#load-six').setAttribute('aria-pressed',exampleKind==='six'?'true':'false');
+}
+
+function updateModifiedDhTable(g){renderStudentMDH(false);}
+// ================= END STUDENT LESSON =================
+function renderScene(){const g=model(),geometry=dhFrameAxes(g),frames=geometry.frames,tf=toolFrame(g,frames);setup(g);
+ let h=`<defs><marker id="dimarrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto-start-reverse"><path d="M7 1 L1 4 L7 7" fill="none" stroke="#2563dc" stroke-width="1.3"/></marker></defs>`;
+ if(flags.guides){
+  const xx=g.nodes.flatMap(e=>e.k==='J'?[e.p[0],e.end[0]]:[e.a[0],e.b[0]]),yy=g.nodes.flatMap(e=>e.k==='J'?[e.p[1],e.end[1]]:[e.a[1],e.b[1]]);
+  const bx=Math.max(2.8,...xx)+.5,by=Math.max(1.6,...yy)+.4;
+  h+=polyline([[0,0,0],[bx,0,0],[bx,by,0],[0,by,0],[0,0,0]],'#e1b5c0',1,'stroke-dasharray="4 5"');
+  for(const e of g.nodes.filter(e=>e.k==='J'&&e.p[2]>.10))h+=line(e.p,[e.p[0],e.p[1],0],'#e4c0ca',1,'stroke-dasharray="5 5"');
+ }
+ // Golden grounding point and ground hatch (not a y-axis).
+ h+=line([0,0,-.36],[0,0,0],'#c59930',2.5);
+ for(let z=-.34;z<=-.13;z+=.095)h+=line([0,0,z],[.12,0,z-.075],'#c59930',2.4);
+ for(const e of g.links){
+  if(e.i===selected)h+=line(e.a,e.b,'#b8d3fa',13,'stroke-linecap="round"');
+  h+=line(e.a,e.b,'#914858',3,'stroke-linecap="round"');
+  const a=projection(e.a),b=projection(e.b);
+  h+=`<line data-index="${e.i}" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="transparent" stroke-width="24" style="cursor:pointer"/>`;
+  if(flags.dims)h+=dimension(e);
+ }
+ for(const e of g.nodes.filter(e=>e.k==='J')){
+  if(e.type==='P'&&Math.abs(e.q)>0.0001)h+=line(e.p,e.end,'#914858',2,'stroke-dasharray="5 3"');
+  h+=jointShape(e);
+ }
+ if(flags.gripper)h+=gripper(g,tf);
+ // Ground reference: x0 +X, z0 +Z; y0 is intentionally not rendered.
+ h+=triadArrow([0,0,0],[0,0,1],'#ed343c','z₀',.36);
+ h+=triadArrow([0,0,0],[1,0,0],'#20ae5f','x₀',.48);
+ // Combine coincident origins and parallel frame arrows to reduce clutter.
+ const drawArrows=[];
+ function addArrow(origin,direction,color,tag,size){
+  let item=drawArrows.find(a=>a.color===color&&norm(sub(a.origin,origin))<1e-5&&dot(a.direction,direction)>.99999);
+  if(item){item.tags.push(tag);item.size=Math.max(item.size,size)}
+  else drawArrows.push({origin:[...origin],direction:[...direction],color,tags:[tag],size});
+ }
+ const jointsForLesson=g.nodes.filter(e=>e.k==='J');
+ for(let i=0;i<frames.length;i++){
+  const frame=frames[i],joint=jointsForLesson[i];
+  const userZ=studentVector(joint.uid,'z'),userX=studentVector(joint.uid,'x');
+  if(userZ)addArrow(frame.origin,userZ,'#ed343c','z'+subs(frame.i)+'?',frame.i===chosenJoint?.68:.46);
+  if(userX)addArrow(frame.origin,userX,'#20ae5f','x'+subs(frame.i)+'?',frame.i===chosenJoint?.68:.46);
+  if(showCorrect){
+   // Correct axes displayed only after a student explicitly checks and asks to compare.
+   h+=triadArrow(frame.origin,frame.z,'#a33138','✓ z'+subs(frame.i),.39);
+   h+=triadArrow(frame.origin,frame.x,'#168e48','✓ x'+subs(frame.i),.39);
+  }
+  if(flags.guides&&showCorrect&&frame.next&&frame.kind==='Skew'&&norm(sub(frame.to,frame.from))>.025)
+   h+=line(frame.from,frame.to,'#8fca9d',1.7,'stroke-dasharray="4 5"');
+ }
+ for(const a of drawArrows)h+=triadArrow(a.origin,a.direction,a.color,a.tags.join(' '),a.size);
+ // A tool frame can move with its tool point, but has the SAME orientation as
+ // the last joint. Draw only x and z (never y), and place it at the tool tip.
+ if(flags.toolframe&&showCorrect&&frames.length){
+  h+=triadArrow(tf.origin,tf.z,'#ed343c','zₜ',.33);
+  h+=triadArrow(tf.origin,tf.x,'#20ae5f','xₜ',.33);
+  h+=text(tf.origin,'T',-10,18,'#284b7b',16,'bold');
+ }
+ if(showCorrect&&geometry.groups.length){
+  for(const group of geometry.groups){
+   const first=group.start+1,last=group.end+1;
+   h+=text(group.origin,'O'+subs(first)+'=…=O'+subs(last),-65,24,'#235eab',17,'bold');
+   const p=projection(group.origin);
+   h+=`<circle cx="${p[0]}" cy="${p[1]}" r="5" fill="#fff" stroke="#235eab" stroke-width="2.3"/>`;
+  }
+ }
+ const origin=projection([0,0,0]);
+ h+=`<circle cx="${origin[0]}" cy="${origin[1]}" r="5" fill="#e6b52f" stroke="#665016" stroke-width="1.5"/>`;
+ h+=text([0,0,0],'O₀',-24,19,'#25354a',19,'bold');
+ if(showCorrect&&frames.length){h+=text(frames[0].origin,'O₁',-23,30,'#25354a',17,'bold');}
+ svg.innerHTML=h;
+ $('#counts').textContent=`${g.j} joints · ${g.l} links`;
+ const seq=g.nodes.filter(e=>e.k==='J').map(e=>e.type).join(' – ')||'No joints';
+ $('#sequence').textContent=seq;$('#chain-tag').textContent=seq.replace(/ – /g,' · ');
+ $('#frame-rows').innerHTML=frames.map(f=>`<tr data-frame="${f.i}"><td> x${subs(f.i)}, z${subs(f.i)}</td><td>${f.next?'z'+subs(f.i)+' → z'+subs(f.next):'z'+subs(f.i)+' → tool'}</td><td>${f.kind}</td><td>(${f.origin.map(v=>fmt(v)).join(', ')}) m</td><td>${f.originChoice}</td><td>${f.error.toExponential(1)}</td></tr>`).join('');
+ $('#shared-status').textContent=geometry.groups.length?geometry.groups.map(g=>'O'+Array.from({length:g.length},(_,i)=>subs(g.start+1+i)).join(' = O')).join('; '):'No shared axis intersection of three or more consecutive joints';
+ $('#tool-status').textContent='Tool orientation = J'+subs(tf.parent)+' orientation (xₜ ∥ x'+subs(tf.parent)+', zₜ ∥ z'+subs(tf.parent)+')';
+ $('#tool-x').textContent=fmt(g.tool[0])+' m';$('#tool-y').textContent=fmt(g.tool[1])+' m';$('#tool-z').textContent=fmt(g.tool[2])+' m';
+ const card=$('#dimensions-card');card.hidden=!flags.dims;
+ if(flags.dims){$('#dimension-rows').innerHTML=g.links.map(e=>`<tr data-link="${e.i}"><td class="dimname">L${subs(e.n)}</td><td>${fmt(e.len)} m</td><td>${esc(e.dir.toUpperCase().replace('-','−'))}</td><td>${esc(e.prev)}</td></tr>`).join('')||'<tr><td colspan="4">No links yet.</td></tr>';}
+ updateModifiedDhTable(g);renderGeometricProof();
+}
+function opts(current,values){return values.map(([a,b])=>`<option value="${esc(a)}" ${a===current?'selected':''}>${esc(b)}</option>`).join('')}
+const dirOps=[['x','+X'],['-x','−X'],['y','+Y'],['-y','−Y'],['z','+Z'],['-z','−Z']];
+function renderEditor(){const e=items[selected];if(!e){editor.className='editor empty';editor.innerHTML='Click a joint or link in the drawing to edit its geometry or move the joint.';return}
+ const no=model().nodes[selected].n;editor.className='editor';
+ let html=`<strong style="font-size:12px">${e.k==='J'?'Joint J':'Link '}${no}</strong>`;
+ if(e.k==='J'){
+  html+=`<div class="field"><label>Joint type</label><select data-field="type">${opts(e.type,[['R','Revolute (R)'],['P','Prismatic (P)']])}</select></div>`;
+  html+=`<div class="field"><label>Joint axis (local frame)</label><select data-field="axis">${opts(e.axis,dirOps)}</select></div>`;
+  html+=`<label class="check" style="margin-top:10px">Reverse x${subs(no)} (valid normal choice)<input type="checkbox" data-field="flipX" ${e.flipX?'checked':''}></label>`;
+  if(e.type==='R'){
+   html+=`<div class="field"><label>Rotation: <span class="value" id="joint-value">${Math.round(e.q)}°</span></label><input data-field="q" type="range" min="-180" max="180" step="1" value="${e.q}"></div>`;
+   html+=`<div class="field"><label>Revolute symbol</label><select data-field="symbol">${opts(e.symbol,[['sleeve','Cylindrical bearing'],['pin','Circle / pin']])}</select></div>`;
+  }else html+=`<div class="field"><label>Slide displacement: <span class="value" id="joint-value">${fmt(e.q)} m</span></label><input data-field="q" type="range" min="-0.35" max="0.85" step="0.01" value="${e.q}"></div>`;
+ }else{
+  html+=`<div class="field"><label>Link direction (local frame)</label><select data-field="dir">${opts(e.dir,dirOps)}</select></div>`;
+  html+=`<div class="field"><label>Length: <span class="value" id="link-value">${fmt(e.len)} m</span></label><input data-field="len" type="range" min="0.20" max="3.20" step="0.01" value="${e.len}"></div>`;
+ }
+ if(e.k==='J')html+='<button class="delete" id="delete-joint-link" style="margin:8px 0 4px;width:100%">Remove this joint + following link</button>';html+='<button class="delete" id="delete-selected">Remove selected element</button>';editor.innerHTML=html;
+}
+function redraw(){renderScene();renderEditor()}
+function stopAnimation(){if(!animating)return;animating=false;cancelAnimationFrame(animationId);$('#animate').textContent='▶ Animate joints'}
+svg.addEventListener('click',ev=>{if(suppressClick){suppressClick=false;return}const el=ev.target.closest('[data-index]');if(el){stopAnimation();selected=+el.dataset.index;redraw()}});
+
+// Step navigation, mobile-friendly direction selectors and contextual feedback.
+$('#student-joints').addEventListener('click',ev=>{
+ const b=ev.target.closest('[data-choose-joint]');if(!b)return;
+ chosenJoint=+b.dataset.chooseJoint;const jj=model().nodes.filter(e=>e.k==='J')[chosenJoint-1];if(jj){selected=jj.i;renderEditor()}renderFrameChoices();renderScene();
+});
+for(const key of ['z','x']){
+ $('#student-'+key).addEventListener('change',ev=>{
+  const j=geometryOfCurrent().joints[chosenJoint-1];if(!j)return;
+  getStudent(j.uid)[key]=ev.target.value;
+  checkedFrames=false;showCorrect=false;$('#compare-frames').disabled=true;$('#frame-card').hidden=true;
+  renderFrameChoices();renderScene();
+ });
+ for(const attr of ['Az','El']){
+  $('#'+key+'-'+attr.toLowerCase()).addEventListener('input',ev=>{
+   const j=geometryOfCurrent().joints[chosenJoint-1];if(!j)return;
+   getStudent(j.uid)[key+attr]=+ev.target.value;
+   $('#'+key+'-'+attr.toLowerCase()+'-value').textContent=ev.target.value+'°';
+   checkedFrames=false;showCorrect=false;$('#compare-frames').disabled=true;$('#frame-card').hidden=true;
+   renderScene();
+  });
+ }
+}
+$('#check-frames').addEventListener('click',checkStudentFrames);
+$('#compare-frames').addEventListener('click',()=>{if(!checkedFrames)return;showCorrect=!showCorrect;flags.axes=showCorrect;$('#axes').checked=showCorrect;$('#frame-card').hidden=!showCorrect;$('#compare-frames').textContent=showCorrect?'Hide instructor axes':'Compare instructor axes';renderScene()});
+$('#clear-axes').addEventListener('click',clearStudentFrames);
+$('#go-table').addEventListener('click',()=>{lessonMode='mdh';updateLessonMode();$('#mdh-card').scrollIntoView({behavior:'smooth',block:'start'})});
+$('#stage-mdh').addEventListener('click',()=>{lessonMode='mdh';updateLessonMode()});
+$('#stage-frames').addEventListener('click',()=>{lessonMode='frames';updateLessonMode()});
+$('#back-to-frames').addEventListener('click',()=>{lessonMode='frames';updateLessonMode()});
+$('#jump-to-mdh').addEventListener('click',()=>$('#mdh-card').scrollIntoView({behavior:'smooth',block:'start'}));
+$('#mdh-rows').addEventListener('input',ev=>{
+ const input=ev.target.closest('input[data-uid][data-param]');if(!input)return;
+ getStudentRow(Number(input.dataset.uid))[input.dataset.param]=input.value;
+ checkedTable=false;showTableSolution=false;tableMarks=[];
+ $('#reveal-mdh').disabled=true;$('#mdh-solution').hidden=true;
+ input.classList.remove('good','bad');
+});
+$('#check-mdh').addEventListener('click',()=>{checkStudentTable()});
+$('#reveal-mdh').addEventListener('click',()=>{if(!checkedTable)return;showTableSolution=!showTableSolution;if(showTableSolution)renderTeacherSolution();else $('#mdh-solution').hidden=true;$('#reveal-mdh').textContent=showTableSolution?'Hide correct table':'Show correct table'});
+// On any link/joint structural edit, invalidate the previously graded answers.
+$('#dimension-rows').addEventListener('click',ev=>{const tr=ev.target.closest('[data-link]');if(tr){stopAnimation();selected=+tr.dataset.link;redraw()}});
+$('#mdh-rows').addEventListener('click',ev=>{if(ev.target.closest('input'))return;const tr=ev.target.closest('[data-mdh]');if(!tr)return;const j=model().nodes.filter(e=>e.k==='J')[Number(tr.dataset.mdh)-1];if(j){stopAnimation();selected=j.i;redraw()}});
+
+$('#frame-rows').addEventListener('click',ev=>{const tr=ev.target.closest('[data-frame]');if(!tr)return;const n=+tr.dataset.frame;const j=model().nodes.filter(e=>e.k==='J')[n-1];if(j){stopAnimation();selected=j.i;redraw()}});
+editor.addEventListener('input',ev=>{const field=ev.target.dataset.field,e=items[selected];if(!e)return;if(field==='len'){e.len=+ev.target.value;$('#link-value').textContent=fmt(e.len)+' m';markStructureChanged();renderScene()}else if(field==='q'){stopAnimation();e.q=+ev.target.value;$('#joint-value').textContent=e.type==='R'?Math.round(e.q)+'°':fmt(e.q)+' m';checkedFrames=false;checkedTable=false;showCorrect=false;frameMarks=[];tableMarks=[];$('#compare-frames').disabled=true;$('#reveal-mdh').disabled=true;renderScene()}});
+editor.addEventListener('change',ev=>{const field=ev.target.dataset.field,e=items[selected];if(!field||field==='len'||field==='q'||!e)return;e[field]=field==='flipX'?ev.target.checked:ev.target.value;if(field==='type'){e.q=0;e.symbol=e.type==='R'?'sleeve':'slide'}markStructureChanged();redraw()});
+editor.addEventListener('click',ev=>{if(ev.target.id==='delete-joint-link'&&items[selected]?.k==='J'){stopAnimation();const count=items[selected+1]?.k==='L'?2:1;items.splice(selected,count);selected=-1;markStructureChanged();redraw();}else if(ev.target.id==='delete-selected'){stopAnimation();items.splice(selected,1);selected=-1;markStructureChanged();redraw()}});
+function insertJoint(type){stopAnimation();const i=selected>=0?selected+1:items.length,prev=items[i-1];const j={k:'J',type,axis:type==='R'?'z':'x',q:0,symbol:type==='R'?'sleeve':'slide'},l={k:'L',dir:'x',len:.9};
+ if(prev&&prev.k==='J'){items.splice(i,0,l,j);selected=i+1}else{items.splice(i,0,j,l);selected=i}numberParts();markStructureChanged();redraw()}
+$('#add-r').addEventListener('click',()=>insertJoint('R'));$('#add-p').addEventListener('click',()=>insertJoint('P'));
+$('#add-link').addEventListener('click',()=>{stopAnimation();const i=selected>=0?selected+1:items.length;items.splice(i,0,{k:'L',dir:'x',len:1});selected=i;numberParts();markStructureChanged();redraw()});
+for(const flag of Object.keys(flags))$('#'+flag).addEventListener('change',ev=>{if(flag==='axes'&&!checkedFrames){ev.target.checked=false;return;}flags[flag]=ev.target.checked;if(flag==='axes'){showCorrect=flags.axes;$('#frame-card').hidden=!showCorrect;}renderScene()});
+function view(name){viewMode=name;
+ if(name==='iso'){az=orbitAz;el=orbitEl;}
+ else if(name==='top'){az=-.8;el=1.569;}
+ else if(name==='side'){az=0;el=.002;}
+ document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));
+ $('#orbit-controls').hidden=name!=='iso';renderScene();
+}
+for(const b of document.querySelectorAll('[data-view]'))b.addEventListener('click',()=>view(b.dataset.view));
+for(const b of document.querySelectorAll('[data-orbit]'))b.addEventListener('click',()=>{
+ if(viewMode!=='iso')return;
+ const k=b.dataset.orbit,step=.18;
+ if(k==='left')az-=step;if(k==='right')az+=step;
+ if(k==='up')el=Math.min(1.55,el+step);if(k==='down')el=Math.max(-.45,el-step);
+ orbitAz=az;orbitEl=el;renderScene();
+});
+$('#zoom-in').addEventListener('click',()=>{zoom=Math.min(2,zoom*1.14);renderScene()});
+$('#zoom-out').addEventListener('click',()=>{zoom=Math.max(.5,zoom/1.14);renderScene()});
+$('#reset-view').addEventListener('click',()=>{zoom=1;orbitAz=-1.05;orbitEl=.56;view('iso')});
+function loadExample(which){
+ stopAnimation();exampleKind=which;items=which==='six'?sixJointExample():initial();frame1Shift=0;
+ numberParts();selected=-1;chosenJoint=1;studentAxis.clear();studentTable.clear();
+ zoom=1;orbitAz=-1.05;orbitEl=.56;$('#origin-shift').value='0';
+ markStructureChanged();view('iso');redraw();
+}
+$('#load-rrp').addEventListener('click',()=>loadExample('rrp'));
+$('#load-six').addEventListener('click',()=>loadExample('six'));
+$('#origin-shift').addEventListener('input',ev=>{
+ frame1Shift=Number(ev.target.value);markStructureChanged();renderScene();
+});
+$('#reset-example').addEventListener('click',()=>loadExample('rrp'));
+$('#home').addEventListener('click',()=>{stopAnimation();items.forEach(e=>{if(e.k==='J')e.q=0});markStructureChanged();redraw()});
+let startTime=0;
+function tick(ts){if(!animating)return;if(!startTime)startTime=ts;const t=(ts-startTime)/1000;let k=0;for(const e of items){if(e.k!=='J')continue;k++;e.q=e.type==='R'?Math.round(28*Math.sin(t*.9+k*.62)):+(.24*Math.sin(t*.95+k*.75)).toFixed(2)}renderScene();if(selected>=0&&items[selected]?.k==='J')renderEditor();animationId=requestAnimationFrame(tick)}
+$('#animate').addEventListener('click',()=>{if(animating){stopAnimation();return}animating=true;startTime=0;$('#animate').textContent='Ⅱ Pause animation';checkedFrames=false;checkedTable=false;showCorrect=false;$('#compare-frames').disabled=true;$('#reveal-mdh').disabled=true;animationId=requestAnimationFrame(tick)});
+svg.addEventListener('pointerdown',ev=>{dragging=viewMode==='iso';moved=false;downX=lastX=ev.clientX;downY=lastY=ev.clientY});
+svg.addEventListener('pointermove',ev=>{if(!dragging)return;const dx=ev.clientX-lastX,dy=ev.clientY-lastY;lastX=ev.clientX;lastY=ev.clientY;if(Math.hypot(ev.clientX-downX,ev.clientY-downY)>5){moved=true;suppressClick=true;try{svg.setPointerCapture(ev.pointerId)}catch(_){}az+=dx*.009;el=Math.max(-.45,Math.min(1.55,el+dy*.007));orbitAz=az;orbitEl=el;svg.classList.add('dragging');renderScene()}});
+svg.addEventListener('pointerup',()=>{dragging=false;svg.classList.remove('dragging');if(!moved)suppressClick=false;else setTimeout(()=>suppressClick=false,100)});
+svg.addEventListener('pointercancel',()=>{dragging=false;svg.classList.remove('dragging')});
+svg.addEventListener('wheel',ev=>{ev.preventDefault();zoom=Math.max(.50,Math.min(2,zoom*(ev.deltaY<0?1.09:.91)));renderScene()},{passive:false});
+window.DH_CLASSROOM_V13={inspect:()=>{const g=model(),v=dhFrameAxes(g);return {model:g,frames:v.frames,groups:v.groups,tool:toolFrame(g,v.frames),dh:deriveDynamicMDH()}},setJoint:(i,q)=>{let e=items.filter(e=>e.k==='J')[i-1];if(e){e.q=q;renderScene();}},setLink:(i,dir,len)=>{let e=items.filter(e=>e.k==='L')[i-1];if(e){if(dir)e.dir=dir;if(len!=null)e.len=len;renderScene();}},setFrame1Shift:v=>{frame1Shift=v;$('#origin-shift').value=v;renderScene();},setSimplify:v=>{flags.simplify=v;$('#simplify').checked=v;renderScene();}};
+redraw();renderFrameChoices();updateLessonMode();
+})();
+</script>
+</body></html>
